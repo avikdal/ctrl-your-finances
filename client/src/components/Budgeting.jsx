@@ -6,7 +6,7 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import InputLabel from '@mui/material/InputLabel';
 import InputAdornment from '@mui/material/InputAdornment';
 import FormControl from '@mui/material/FormControl';
-import { Button, Stack } from '@mui/material';
+import Button from '@mui/material/Button';
 import { AppContext } from '../context/Context'
 
 
@@ -14,18 +14,19 @@ import { AppContext } from '../context/Context'
 // grab user data and have house account toggle for different access to goal charts
 
 function Budgeting() {
-    const { userId, userGoals, setUserGoals } = AppContext()
+    const [userGoals, setUserGoals] = useState([]);
     const [goalName, setGoalName] = useState("");
     const [savedMoney, setSavedMoney] = useState(0);
     const [targetAmount, setTargetAmount] = useState(0);
     const [showForm, setShowForm] = useState(false);
-    
-    // useEffect(() => {
-      //   // fetch user's goals from backend
-      //   fetchUserGoals();
-      // },[])
-      
-      
+
+    useEffect(() => {
+      // fetch user's goals from backend
+      fetchUserGoals();
+    },[])
+
+
+    const { userId } = AppContext()
 
 
     const fetchUserGoals = async () => {
@@ -35,8 +36,6 @@ function Budgeting() {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            // Will there need to be authorization token or admin allowances?
-            // "Authorization": `Admin ${admin}`
           }
         });
         if (response.ok) {
@@ -60,16 +59,13 @@ function Budgeting() {
         const response = await fetch(`http://127.0.0.1:5555/api/goals/${userId.id}`, {
           method: "POST",
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-            // Will there need to be authorization token or admin allowances?
-            // "Authorization": `Admin ${admin}`
+            "Content-Type": "application/json",
           },
-          body: `name=${goalName}&saved=${savedMoney}&target=${targetAmount}`
-          // body: JSON.stringify({
-          //   name: goalName,
-          //   saved: savedMoney,
-          //   target: targetAmount
-          // })
+          body: JSON.stringify({
+            name: goalName,
+            saved: savedMoney,
+            target: targetAmount
+          })
         });
         if (response.ok) {
           const data = await response.json();
@@ -77,9 +73,7 @@ function Budgeting() {
           setGoalName("");
           setSavedMoney(0);
           setTargetAmount(0);
-          // fetchUserGoals();
-          setShowForm(false)
-          setUserGoals((currentGoals) => [...currentGoals, data])
+          fetchUserGoals();
         }else {
           console.error("Failed to add goal");
         }
@@ -106,38 +100,15 @@ function Budgeting() {
       chartData.new.push([goal.name, goal.saved]);
   });
 
-  const buttonStyle = {
-      margin: '1rem auto',
-      display: 'flex',
-      backgroundColor: 'green',
-      color: 'white',
-      fontSize: '0.9rem',
-      border: '1px solid green',
-      fontFamily: 'Poppins, sans-serif',
-      "&&:hover": {
-          backgroundColor: "white",
-          color: "green",
-          
-      },
-      "&&:focus": {
-          backgroundColor: "white",
-          color: "green",
-          
-      }
-  }
 
-  function handleCancelGoal() {
-    setGoalName("");
-    setSavedMoney(0);
-    setTargetAmount(0);
-    setShowForm(false)
-  }  
+  
 
     return (
         <div>
           <Box
             sx={{
-            padding: '20px',  
+            padding: '20px', 
+            border: '1px solid #ccc', 
             borderRadius: '5px',
             maxWidth: '500px',
             flexGrow: 1,
@@ -145,42 +116,22 @@ function Budgeting() {
             marginTop: '20px' 
             }}
           >
-            <h2 
-            style={{
-              fontFamily: 'Poppins', 
-              color: '#009933',
-              textAlign: 'center',
-              marginBottom: '.5rem',
-              textDecoration: 'underline'
-            }}>BUDGETING GOALS</h2>
-            <h3 
-            style={{ 
-              fontFamily: 'Poppins', 
-              color: '#32004C',
-              marginTop: '.5rem',
-              marginBottom: '.5rem',
-              }}>Set Your Financial Goals</h3>
+            <h1 style={{fontFamily: 'Poppins', color: '#009933'}}>BUDGETING GOALS</h1>
+            <h2 style={{ fontFamily: 'Poppins', color: '#32004C' }}>Set Your Financial Goals</h2>
             <p style={{ fontFamily: 'Poppins', color: '#32004C' }}>Start your journey towards financial well-being today. Define clear, achievable goals that align with your aspirations and values.</p>
 
             {!showForm && (
-              <Box
-              sx={
-                {
-                  display: 'flex',
-                  justifyContent: 'center'
-                }
-              }
-              >
               <Button 
               variant="contained"
-              sx={buttonStyle}
+              size="large"
+              style={{ backgroundColor: "#009933", marginTop: '10px' }}
+              fullWidth
               onClick={() => setShowForm(true)}
               >
                 Add Goal
               </Button>
-
-              </Box>
             )}
+
             {showForm && (
             <form
               noValidate
@@ -225,32 +176,20 @@ function Budgeting() {
                   />
               </FormControl>
               
-              <Stack
-                direction="row"
-                justifyContent="center"
-                alignItems="center"
-                spacing={1}
-                sx={{
-                  minWidth: 12 }}
-              >
-                <Button
-                  variant="Contained"
-                  style={{ backgroundColor: "#009933", marginTop: '10px', maxWidth: '40%', minWidth: '40%', color: 'white'}}
-                  onClick={handleCancelGoal}
-                >
-                  Cancel
-                </Button>
-                <Button
+              <Button
                   type="submit"
-                  style={{ backgroundColor: "#009933", marginTop: '10px', maxWidth: '40%', minWidth: '40%', color: 'white'}}
+                  variant="contained"
+                  size="large"
+                  style={{ backgroundColor: "#009933", marginTop: '10px' }}
+                  fullWidth
               >
                   Add Goal
-                </Button>
-              </Stack>
+              </Button>
             </form>
-            )}
+             )}
           </Box>
-          {(userGoals.length > 0) ? 
+
+          {userGoals ? 
           <Chart
               chartType="BarChart"
               width="100%"
@@ -259,11 +198,10 @@ function Budgeting() {
               options={options}
           />
           : null}
+
         </div>
     )
 }
-
-
 
 export default Budgeting
 
